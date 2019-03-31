@@ -407,7 +407,7 @@ void ServerMap::On_MPK_TRYLEAVE(const MessagePack &rstMPK)
     // otherwise try leave failed
     // we reply MPK_ERROR but this is already something wrong, map never prevert leave on purpose
     m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
-    g_MonoServer->AddLog(LOGTYPE_WARNING, "Leave request failed: UID = " PRIu64 ", X = %d, Y = %d", stAMTL.UID, stAMTL.X, stAMTL.Y);
+    g_MonoServer->AddLog(LOGTYPE_WARNING, "Leave request failed: UID = %" PRIu64 ", X = %d, Y = %d", stAMTL.UID, stAMTL.X, stAMTL.Y);
 }
 
 void ServerMap::On_MPK_PULLCOINFO(const MessagePack &rstMPK)
