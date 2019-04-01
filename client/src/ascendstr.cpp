@@ -21,6 +21,10 @@
 #include "sdldevice.hpp"
 #include "pngtexdbn.hpp"
 
+extern Log *g_Log;
+extern SDLDevice *g_SDLDevice;
+extern PNGTexDBN *g_ProgUseDBN;
+
 AscendStr::AscendStr(int nType, int nValue, int nX, int nY)
     : m_Type(nType)
     , m_Value(nValue)
@@ -42,7 +46,6 @@ AscendStr::AscendStr(int nType, int nValue, int nX, int nY)
             }
         default:
             {
-                extern Log *g_Log;
                 g_Log->AddLog(LOGTYPE_FATAL, "Invalid AscendStr type: %d", Type());
                 break;
             }
@@ -60,8 +63,6 @@ void AscendStr::Update(double fUpdate)
 void AscendStr::Draw(int nViewX, int nViewY)
 {
     if(Ratio() < 1.0){
-        extern SDLDevice *g_SDLDevice;
-        extern PNGTexDBN *g_ProgUseDBN;
 
         auto nCurrX = X();
         auto nCurrY = Y();
