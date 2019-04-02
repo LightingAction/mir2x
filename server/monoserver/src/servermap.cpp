@@ -415,63 +415,63 @@ double ServerMap::OneStepCost(int nCheckCO, int nCheckLock, int nX0, int nY0, in
 
 bool ServerMap::GetValidGrid(int *pX, int *pY, bool bRandom)
 {
-    if(pX && pY){
+    if(!(pX && pY)){
+        throw std::invalid_argument(str_fflprintf(": Invalid argument (%p, %p)", pX, pY));
+    }
 
-        auto nX = *pX;
-        auto nY = *pY;
+    auto nX = *pX;
+    auto nY = *pY;
 
-        bool bValidLoc = true;
-        if(false
-                || !In(ID(), nX, nY)
-                || !CanMove(true, true, nX, nY)){
+    bool bValidLoc = true;
+    if(false
+            || !In(ID(), nX, nY)
+            || !CanMove(true, true, nX, nY)){
 
-            // have to check if we can do random pick
-            // the location field provides an invalid location
-            bValidLoc = false;
+        // have to check if we can do random pick
+        // the location field provides an invalid location
+        bValidLoc = false;
 
-            if(bRandom){
-                if(In(ID(), nX, nY)){
-                    // OK we failed to add monster at the specified location
-                    // but still to try to add near it
-                }else{
-                    // randomly pick one
-                    // an invalid location provided
-                    nX = std::rand() % W();
-                    nY = std::rand() % H();
-                }
+        if(bRandom){
+            if(In(ID(), nX, nY)){
+                // OK we failed to add monster at the specified location
+                // but still to try to add near it
+            }else{
+                // randomly pick one
+                // an invalid location provided
+                nX = std::rand() % W();
+                nY = std::rand() % H();
+            }
 
-                RotateCoord stRC;
-                if(stRC.Reset(nX, nY, 0, 0, W(), H())){
-                    do{
-                        if(true
-                                && In(ID(), stRC.X(), stRC.Y())
-                                && CanMove(true, true, stRC.X(), stRC.Y())){
+            RotateCoord stRC;
+            if(stRC.Reset(nX, nY, 0, 0, W(), H())){
+                do{
+                    if(true
+                            && In(ID(), stRC.X(), stRC.Y())
+                            && CanMove(true, true, stRC.X(), stRC.Y())){
 
-                            // find a valid location
-                            // use it to add new charobject
-                            bValidLoc = true;
+                        // find a valid location
+                        // use it to add new charobject
+                        bValidLoc = true;
 
-                            nX = stRC.X();
-                            nY = stRC.Y();
-                            break;
-                        }
-                    }while(stRC.Forward());
-                }
+                        nX = stRC.X();
+                        nY = stRC.Y();
+                        break;
+                    }
+                }while(stRC.Forward());
             }
         }
-
-        // if we get the valid location, output it
-        // otherwise we keep it un-touched
-
-        if(bValidLoc){
-
-            *pX = nX;
-            *pY = nY;
-        }
-
-        return bValidLoc;
     }
-    return false;
+
+    // if we get the valid location, output it
+    // otherwise we keep it un-touched
+
+    if(bValidLoc){
+
+        *pX = nX;
+        *pY = nY;
+    }
+
+    return bValidLoc;
 }
 
 bool ServerMap::RandomLocation(int *pX, int *pY)
