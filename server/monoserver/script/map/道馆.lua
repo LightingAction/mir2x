@@ -55,9 +55,9 @@ if getTime() - g_LastInvokeTime > g_LogicDelay then
         -- addMonster(g_MonsterList[math.random(#g_MonsterList)], 400 + math.random(1, 6), 120 + math.random(1, 4),  true)
 
         -- randomly add monsters
-        -- don't use rotate_coord, it adds too many monsters at corner
+        -- use strict_loc, otherwise it adds too many monsters at corner
         for index = 1, 100 do
-            addMonster(g_MonsterList[math.random(#g_MonsterList)], math.random(1, 600), math.random(1, 400), false)
+            addMonster(g_MonsterList[math.random(#g_MonsterList)], math.random(1, 590), math.random(1, 390), true)
         end
 
     end

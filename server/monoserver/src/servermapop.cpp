@@ -139,26 +139,7 @@ void ServerMap::On_MPK_TRYSPACEMOVE(const MessagePack &rstMPK)
     }
 
     bool bDstOK = false;
-    if(CanMove(false, false, nDstX, nDstY)){
-        bDstOK = true;
-    }else{
-        if(!stAMTSM.StrictMove){
-            RotateCoord stRC;
-            if(stRC.Reset(nDstX, nDstY, 0, 0, W(), H())){
-                int nDoneCheck = 0;
-                do{
-                    if(CanMove(false, false, stRC.X(), stRC.Y())){
-                        nDstX  = stRC.X();
-                        nDstY  = stRC.Y();
-                        bDstOK = true;
-
-                        break;
-                    }
-                    nDoneCheck++;
-                }while(stRC.Forward() && nDoneCheck < 100);
-            }
-        }
-    }
+    std::tie(bDstOK, nDstX, nDstY) = GetValidGrid(false, false, 100, nDstX, nDstY);
 
     if(!bDstOK){
         m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
@@ -172,6 +153,9 @@ void ServerMap::On_MPK_TRYSPACEMOVE(const MessagePack &rstMPK)
     std::memset(&stAMSMOK, 0, sizeof(stAMSMOK));
 
     stAMSMOK.Ptr = this;
+    stAMSMOK.X   = nDstX;
+    stAMSMOK.Y   = nDstY;
+
     m_ActorPod->Forward(rstMPK.From(), {MPK_SPACEMOVEOK, stAMSMOK}, rstMPK.ID(), [this, nUID = stAMTSM.UID, nDstX, nDstY](const MessagePack &rstRMPK)
     {
         switch(rstRMPK.Type()){
@@ -185,7 +169,7 @@ void ServerMap::On_MPK_TRYSPACEMOVE(const MessagePack &rstMPK)
                     // 2. we won't take care of where it comes from
                     // 3. we don't take reservation of the dstination cell
 
-                    AddGridUID(nUID, nDstX, nDstY);
+                    AddGridUID(nUID, nDstX, nDstY, false);
                     break;
                 }
             default:
@@ -368,7 +352,7 @@ void ServerMap::On_MPK_TRYMOVE(const MessagePack &rstMPK)
 
                     // 2. push to the new cell
                     //    check if it should switch the map
-                    AddGridUID(stAMTM.UID, nMostX, nMostY);
+                    AddGridUID(stAMTM.UID, nMostX, nMostY, false);
                     if(UIDFunc::GetUIDType(stAMTM.UID) == UID_PLY && GetCell(nMostX, nMostY).MapID){
                         AMMapSwitch stAMMS;
                         std::memset(&stAMMS, 0, sizeof(stAMMS));
@@ -470,7 +454,7 @@ void ServerMap::On_MPK_TRYMAPSWITCH(const MessagePack &rstMPK)
                 {
                     // didn't check map switch here
                     // map switch should be triggered by move request
-                    AddGridUID(stAMTMS.UID, stAMMSOK.X, stAMMSOK.Y);
+                    AddGridUID(stAMTMS.UID, stAMMSOK.X, stAMMSOK.Y, false);
                     break;
                 }
             default:
@@ -695,30 +679,27 @@ void ServerMap::On_MPK_NEWDROPITEM(const MessagePack &rstMPK)
             int nBestY    = -1;
             int nMinCount = SYS_MAXDROPITEM + 1;
 
-            RotateCoord stRC;
-            if(stRC.Reset(stAMNDI.X, stAMNDI.Y, 0, 0, W(), H())){
-                do{
-                    if(GroundValid(stRC.X(), stRC.Y())){
+            RotateCoord stRC(stAMNDI.X, stAMNDI.Y, 0, 0, W(), H());
+            do{
+                if(GroundValid(stRC.X(), stRC.Y())){
 
-                        // valid grid
-                        // check if gird good to hold
+                    // valid grid
+                    // check if grid good to hold
 
-                        auto nCurrCount = GetGroundItemList(stRC.X(), stRC.Y()).Length();
-                        if((int)(nCurrCount) < nMinCount){
-                            nMinCount = nCurrCount;
-                            nBestX    = stRC.X();
-                            nBestY    = stRC.Y();
+                    if(auto nCurrCount = GetGroundItemList(stRC.X(), stRC.Y()).Length(); (int)(nCurrCount) < nMinCount){
+                        nMinCount = nCurrCount;
+                        nBestX    = stRC.X();
+                        nBestY    = stRC.Y();
 
-                            // short it if it's an empty slot
-                            // directly use it and won't compare more
+                        // short it if it's an empty slot
+                        // directly use it and won't compare more
 
-                            if(nMinCount == 0){
-                                break;
-                            }
+                        if(nMinCount == 0){
+                            break;
                         }
                     }
-                }while(stRC.Forward() && (nCheckGrid++ <= SYS_MAXDROPITEMGRID));
-            }
+                }
+            }while(stRC.Forward() && (nCheckGrid++ <= SYS_MAXDROPITEMGRID));
 
             if(GroundValid(nBestX, nBestY)){
                 AddGroundItem(CommonItem(stAMNDI.ID, 0), nBestX, nBestY);

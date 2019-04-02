@@ -458,7 +458,7 @@ bool CharObject::RequestSpaceMove(uint32_t nMapID, int nX, int nY, bool bStrictM
                     stAMTL.Y     = Y();
 
                     m_MoveLock = true;
-                    m_ActorPod->Forward(m_Map->UID(), {MPK_TRYLEAVE, stAMTL}, [this, rstRMPK, nX, nY, fnOnMoveOK, fnOnMoveError](const MessagePack &rstLeaveRMPK)
+                    m_ActorPod->Forward(m_Map->UID(), {MPK_TRYLEAVE, stAMTL}, [this, rstRMPK, fnOnMoveOK, fnOnMoveError](const MessagePack &rstLeaveRMPK)
                     {
                         if(!m_MoveLock){
                             throw std::runtime_error(str_fflprintf("MoveLock released before map responds: ClassName = %s", UIDName()));
@@ -481,8 +481,9 @@ bool CharObject::RequestSpaceMove(uint32_t nMapID, int nX, int nY, bool bStrictM
                                     DispatchAction(ActionSpaceMove1(X(), Y(), Direction()));
 
                                     // setup new map
-                                    m_X   = nX;
-                                    m_Y   = nY;
+                                    // don't use the requested location
+                                    m_X   = stAMSMOK.X;
+                                    m_Y   = stAMSMOK.Y;
                                     m_Map = (ServerMap *)(stAMSMOK.Ptr);
 
                                     m_LastMoveTime = g_MonoServer->GetTimeTick();
