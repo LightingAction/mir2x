@@ -74,8 +74,7 @@ void ServerMap::On_MPK_ADDCHAROBJECT(const MessagePack &rstMPK)
 
     auto nX = stAMACO.Common.X;
     auto nY = stAMACO.Common.Y;
-
-    auto bRandom = stAMACO.Common.Random;
+    auto bStrictLoc = stAMACO.Common.StrictLoc;
 
     switch(stAMACO.Type){
         case TYPE_MONSTER:
@@ -83,11 +82,13 @@ void ServerMap::On_MPK_ADDCHAROBJECT(const MessagePack &rstMPK)
                 auto nMonsterID = stAMACO.Monster.MonsterID;
                 auto nMasterUID = stAMACO.Monster.MasterUID;
 
-                if(AddMonster(nMonsterID, nMasterUID, nX, nY, bRandom)){
+                if(AddMonster(nMonsterID, nMasterUID, nX, nY, bStrictLoc)){
                     m_ActorPod->Forward(rstMPK.From(), MPK_OK, rstMPK.ID());
                     return;
                 }
-                break;
+
+                m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
+                return;
             }
         case TYPE_PLAYER:
             {
@@ -95,7 +96,7 @@ void ServerMap::On_MPK_ADDCHAROBJECT(const MessagePack &rstMPK)
                 auto nChannID   = stAMACO.Player.ChannID;
                 auto nDirection = stAMACO.Player.Direction;
 
-                if(auto pPlayer = AddPlayer(nDBID, nX, nY, nDirection, bRandom)){
+                if(auto pPlayer = AddPlayer(nDBID, nX, nY, nDirection, bStrictLoc)){
                     m_ActorPod->Forward(rstMPK.From(), MPK_OK, rstMPK.ID());
                     m_ActorPod->Forward(pPlayer->UID(), {MPK_BINDCHANNEL, nChannID});
 
@@ -108,18 +109,16 @@ void ServerMap::On_MPK_ADDCHAROBJECT(const MessagePack &rstMPK)
                     });
                     return;
                 }
-                break;
+
+                m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
+                return;
             }
         default:
             {
-                break;
+                m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
+                return;
             }
     }
-
-    // anything incorrect happened
-    // report MPK_ERROR to service core that we failed
-
-    m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
 }
 
 void ServerMap::On_MPK_TRYSPACEMOVE(const MessagePack &rstMPK)
