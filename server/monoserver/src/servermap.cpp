@@ -476,7 +476,7 @@ void ServerMap::AddGridUID(uint64_t nUID, int nX, int nY, bool bForce)
 void ServerMap::RemoveGridUID(uint64_t nUID, int nX, int nY)
 {
     if(!ValidC(nX, nY)){
-        return;
+        throw std::invalid_argument(str_fflprintf(": Invalid location: (%d, %d)", nX, nY));
     }
 
     auto &rstUIDList = GetUIDListRef(nX, nY);

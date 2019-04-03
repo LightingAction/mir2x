@@ -130,16 +130,18 @@ void ServerMap::On_MPK_TRYSPACEMOVE(const MessagePack &rstMPK)
     int nDstX = stAMTSM.X;
     int nDstY = stAMTSM.Y;
 
-    if(true
-            && !stAMTSM.StrictMove
-            && !ValidC(stAMTSM.X, stAMTSM.Y)){
+    if(!ValidC(stAMTSM.X, stAMTSM.Y)){
+        if(stAMTSM.StrictMove){
+            m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());
+            return;
+        }
 
         nDstX = std::rand() % W();
         nDstY = std::rand() % H();
     }
 
     bool bDstOK = false;
-    std::tie(bDstOK, nDstX, nDstY) = GetValidGrid(false, false, 100, nDstX, nDstY);
+    std::tie(bDstOK, nDstX, nDstY) = GetValidGrid(false, false, stAMTSM.StrictMove ? 1 : 100, nDstX, nDstY);
 
     if(!bDstOK){
         m_ActorPod->Forward(rstMPK.From(), MPK_ERROR, rstMPK.ID());

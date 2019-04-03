@@ -427,7 +427,7 @@ bool CharObject::RequestSpaceMove(uint32_t nMapID, int nX, int nY, bool bStrictM
     stAMTSM.StrictMove = bStrictMove;
 
     m_MoveLock = true;
-    return m_ActorPod->Forward(UIDFunc::GetMapUID(nMapID), {MPK_TRYSPACEMOVE, stAMTSM}, [this, nX, nY, fnOnMoveOK, fnOnMoveError](const MessagePack &rstRMPK)
+    return m_ActorPod->Forward(UIDFunc::GetMapUID(nMapID), {MPK_TRYSPACEMOVE, stAMTSM}, [this, fnOnMoveOK, fnOnMoveError](const MessagePack &rstRMPK)
     {
         if(!m_MoveLock){
             throw std::runtime_error(str_fflprintf("MoveLock released before map responds: ClassName = %s", UIDName()));
