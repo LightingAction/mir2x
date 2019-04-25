@@ -1437,6 +1437,9 @@ void ProcessRun::OnActionSpawn(uint64_t nUID, const ActionNode &rstAction)
     switch(UIDFunc::GetMonsterID(nUID)){
         case DBCOM_MONSTERID(u8"变异骷髅"):
             {
+                // TODO how about make it as an action of skeleton
+                // then we don't need to define the callback of a done magic
+
                 AddOPLog(OUTPORT_CONTROLBOARD, 2, "", u8"使用魔法: 召唤骷髅"), 
                 m_IndepMagicList.emplace_back(std::make_shared<IndepMagic>
                 (
