@@ -23,9 +23,12 @@
 #include "log.hpp"
 #include "client.hpp"
 #include "message.hpp"
+#include "pngtexdb.hpp"
 #include "sdldevice.hpp"
-#include "pngtexdbn.hpp"
 #include "processlogin.hpp"
+
+extern PNGTexDB *g_ProgUseDB;
+extern SDLDevice *g_SDLDevice;
 
 ProcessLogin::ProcessLogin()
 	: Process()
@@ -82,14 +85,11 @@ void ProcessLogin::Update(double fMS)
 
 void ProcessLogin::Draw()
 {
-    extern SDLDevice *g_SDLDevice;
-    extern PNGTexDBN *g_ProgUseDBN;
-
     g_SDLDevice->ClearScreen();
 
-    g_SDLDevice->DrawTexture(g_ProgUseDBN->Retrieve(0X00000003),   0,  75);
-    g_SDLDevice->DrawTexture(g_ProgUseDBN->Retrieve(0X00000004),   0, 465);
-    g_SDLDevice->DrawTexture(g_ProgUseDBN->Retrieve(0X00000011), 103, 536);
+    g_SDLDevice->DrawTexture(g_ProgUseDB->Retrieve(0X00000003),   0,  75);
+    g_SDLDevice->DrawTexture(g_ProgUseDB->Retrieve(0X00000004),   0, 465);
+    g_SDLDevice->DrawTexture(g_ProgUseDB->Retrieve(0X00000011), 103, 536);
 
     m_Button1.Draw();
     m_Button2.Draw();
