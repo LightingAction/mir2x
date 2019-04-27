@@ -59,62 +59,99 @@ void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint
         return;
     }
 
-    std::vector<int> stBuf(nWidth * nHeight, 0);
+    // -1: normal
+    //  0: transparent
+    //  1: has shadow color, but can be noise points
+    //  2: shadow points for sure
+
+    std::vector<int> stvMark(nWidth * nHeight);
+    auto fnGetMarkRef = [nWidth, &stvMark](size_t nX, size_t nY) -> int &
+    {
+        return stvMark.at(nY * nWidth + nX);
+    };
+
     for(size_t nX = 0; nX < nWidth; ++nX){
         for(size_t nY = 0; nY < nHeight; ++nY){
             if(uint32_t nPixel = pData[nY * nWidth + nX]; nPixel & 0XFF000000){
+                // alpha not 0
+                // can be shadow pixels, noise points or normal points
                 if(false
                         || (nPixel & 0X00FFFFFF) == 0X00080000
                         || (nPixel & 0X00FFFFFF) == 0X00000800
                         || (nPixel & 0X00FFFFFF) == 0X00000008){
-                    stBuf[nY * nWidth + nX] = 1;
+                    fnGetMarkRef(nX, nY) = 1;
+                }else{
+                    fnGetMarkRef(nX, nY) = -1;
+                }
+            }else{
+                // alpha is 0
+                // can be grids between shadow pixels
+                fnGetMarkRef(nX, nY) = 0;
+            }
+        }
+    }
+
+    // mark the 100% sure shadow points, strict step
+    // can fail the edge of shadow area, shadow area too thin also fails
+
+    for(size_t nX = 1; nX < nWidth - 1; ++nX){
+        for(size_t nY = 1; nY < nHeight - 1; ++nY){
+            if(fnGetMarkRef(nX, nY) == 1){
+                if(true
+                        && fnGetMarkRef(nX - 1, nY - 1) > 0
+                        && fnGetMarkRef(nX + 1, nY - 1) > 0
+                        && fnGetMarkRef(nX - 1, nY + 1) > 0
+                        && fnGetMarkRef(nX + 1, nY + 1) > 0
+
+                        && fnGetMarkRef(nX, nY - 1) == 0
+                        && fnGetMarkRef(nX, nY + 1) == 0
+                        && fnGetMarkRef(nX - 1, nY) == 0
+                        && fnGetMarkRef(nX + 1, nY) == 0){
+
+                    // check neighbors around it
+                    // mark as shadow points for 100% sure
+                    fnGetMarkRef(nX, nY) = 2;
                 }
             }
         }
     }
 
-    // assign 2 to edges of shadow
-    // don't assign 0 directly otherwise we will lose all 1's
+    // after previous step, if a pixel is 1, then it must be a shadow pixel
+    // now add back edge points
 
     for(size_t nX = 1; nX < nWidth - 1; ++nX){
         for(size_t nY = 1; nY < nHeight - 1; ++nY){
-            if(stBuf[nY * nWidth + nX]){
-                if(false
-                        || !stBuf[(nY - 1) * nWidth + (nX - 1)]
-                        || !stBuf[(nY - 1) * nWidth + (nX + 1)]
-                        || !stBuf[(nY + 1) * nWidth + (nX - 1)]
-                        || !stBuf[(nY + 1) * nWidth + (nX + 1)]){
-                    stBuf[nY * nWidth + nX] = 2;
-                    continue;
-                }
+            if(fnGetMarkRef(nX, nY) == 2){
+                if(auto &nMark = fnGetMarkRef(nX - 1, nY - 1); nMark == 1){ nMark = 2; }
+                if(auto &nMark = fnGetMarkRef(nX + 1, nY - 1); nMark == 1){ nMark = 2; }
+                if(auto &nMark = fnGetMarkRef(nX - 1, nY + 1); nMark == 1){ nMark = 2; }
+                if(auto &nMark = fnGetMarkRef(nX + 1, nY + 1); nMark == 1){ nMark = 2; }
+            }
+        }
+    }
 
+    // fill those 0's inside 1's
+    // edges can be filled, but area too thin can't be filled
+
+    for(size_t nX = 1; nX < nWidth - 1; ++nX){
+        for(size_t nY = 1; nY < nHeight - 1; ++nY){
+            if(fnGetMarkRef(nX, nY) == 0){
                 if(false
-                        || stBuf[(nY - 1) * nWidth + nX]
-                        || stBuf[(nY + 1) * nWidth + nX]
-                        || stBuf[nY * nWidth + (nX - 1)]
-                        || stBuf[nY * nWidth + (nX + 1)]){
-                    stBuf[nY * nWidth + nX] = 2;
-                    continue;
+                        || (fnGetMarkRef(nX - 1, nY) == 2 && fnGetMarkRef(nX + 1, nY) == 2)
+                        || (fnGetMarkRef(nX, nY - 1) == 2 && fnGetMarkRef(nX, nY + 1) == 2)){
+                    fnGetMarkRef(nX, nY) = 2;
                 }
             }
         }
     }
 
-    for(size_t nX = 1; nX < nWidth - 1; ++nX){
-        for(size_t nY = 1; nY < nHeight - 1; ++nY){
-            if(!stBuf[nY * nWidth + nX]){
-                if(false
-                        || (stBuf[nY * nWidth + (nX - 1)] == 1 && stBuf[nY * nWidth + (nX + 1)] == 1)
-                        || (stBuf[(nY - 1) * nWidth + nX] == 1 && stBuf[(nY + 1) * nWidth + nX] == 1)){
-                    stBuf[nY * nWidth + nX] = 1;
-                }
-            }
-        }
-    }
+    // done
+    // for pixel marked as 1 or 2, assign given color
+    // also assign for pixels marked as 1, because I don't want extra process for areas too thin
 
     for(size_t nX = 1; nX < nWidth - 1; ++nX){
         for(size_t nY = 1; nY < nHeight - 1; ++nY){
-            if(stBuf[nY * nWidth + nX] == 1){
+            if(fnGetMarkRef(nX, nY) > 0){
                 pData[nY * nWidth + nX] = nShadowColor;
             }
         }
