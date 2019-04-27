@@ -72,7 +72,7 @@ bool PreviewWindow::LoadImage()
     }
 
     if(g_MainWindow->ShadowRemovalEnabled()){
-        CalcShadowRemovalAlpha(m_Buf.data(), nW, nH, 0X00FFFFFF, 0X00000008, 0X80000000);
+        CalcShadowRemovalAlpha(m_Buf.data(), nW, nH, 0X80000000);
     }
 
     m_Image = std::make_unique<Fl_RGB_Image>((uchar *)(m_Buf.data()), nW, nH, 4);

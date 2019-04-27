@@ -49,9 +49,7 @@ void CalcPixelAutoAlpha(uint32_t *pData, size_t nDataLen)
     }
 }
 
-// #include <cstdio>
-// #include <cinttypes>
-void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint32_t nCheckMask, uint32_t nCheckShadow, uint32_t nShadowColor)
+void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint32_t nShadowColor)
 {
     if(!(pData && nWidth && nHeight)){
         throw std::invalid_argument(str_fflprintf(": invalid buffer: (%p, %zu, %zu)", pData, nWidth, nHeight));
@@ -61,18 +59,22 @@ void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint
         return;
     }
 
-    // for(size_t nX = 0; nX < nWidth; ++nX){
-    //     for(size_t nY = 0; nY < nHeight; ++nY){
-    //         std::printf("%08" PRIX32 "\n", pData[nY * nWidth + nX] & nCheckMask);
-    //     }
-    // }
-
-    std::vector<int> stBuf(nWidth * nHeight);
+    std::vector<int> stBuf(nWidth * nHeight, 0);
     for(size_t nX = 0; nX < nWidth; ++nX){
         for(size_t nY = 0; nY < nHeight; ++nY){
-            stBuf[nY * nWidth + nX] = (int)((pData[nY * nWidth + nX] & nCheckMask) == (nCheckShadow & nCheckMask));
+            if(uint32_t nPixel = pData[nY * nWidth + nX]; nPixel & 0XFF000000){
+                if(false
+                        || (nPixel & 0X00FFFFFF) == 0X00080000
+                        || (nPixel & 0X00FFFFFF) == 0X00000800
+                        || (nPixel & 0X00FFFFFF) == 0X00000008){
+                    stBuf[nY * nWidth + nX] = 1;
+                }
+            }
         }
     }
+
+    // assign 2 to edges of shadow
+    // don't assign 0 directly otherwise we will lose all 1's
 
     for(size_t nX = 1; nX < nWidth - 1; ++nX){
         for(size_t nY = 1; nY < nHeight - 1; ++nY){
@@ -82,7 +84,7 @@ void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint
                         || !stBuf[(nY - 1) * nWidth + (nX + 1)]
                         || !stBuf[(nY + 1) * nWidth + (nX - 1)]
                         || !stBuf[(nY + 1) * nWidth + (nX + 1)]){
-                    stBuf[nY * nWidth + nX] = 0;
+                    stBuf[nY * nWidth + nX] = 2;
                     continue;
                 }
 
@@ -91,7 +93,7 @@ void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint
                         || stBuf[(nY + 1) * nWidth + nX]
                         || stBuf[nY * nWidth + (nX - 1)]
                         || stBuf[nY * nWidth + (nX + 1)]){
-                    stBuf[nY * nWidth + nX] = 0;
+                    stBuf[nY * nWidth + nX] = 2;
                     continue;
                 }
             }
@@ -102,8 +104,8 @@ void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint
         for(size_t nY = 1; nY < nHeight - 1; ++nY){
             if(!stBuf[nY * nWidth + nX]){
                 if(false
-                        || (stBuf[nY * nWidth + (nX - 1)] && stBuf[nY * nWidth + (nX + 1)])
-                        || (stBuf[(nY - 1) * nWidth + nX] && stBuf[(nY + 1) * nWidth + nX])){
+                        || (stBuf[nY * nWidth + (nX - 1)] == 1 && stBuf[nY * nWidth + (nX + 1)] == 1)
+                        || (stBuf[(nY - 1) * nWidth + nX] == 1 && stBuf[(nY + 1) * nWidth + nX] == 1)){
                     stBuf[nY * nWidth + nX] = 1;
                 }
             }
@@ -112,7 +114,7 @@ void CalcShadowRemovalAlpha(uint32_t *pData, size_t nWidth, size_t nHeight, uint
 
     for(size_t nX = 1; nX < nWidth - 1; ++nX){
         for(size_t nY = 1; nY < nHeight - 1; ++nY){
-            if(stBuf[nY * nWidth + nX]){
+            if(stBuf[nY * nWidth + nX] == 1){
                 pData[nY * nWidth + nX] = nShadowColor;
             }
         }

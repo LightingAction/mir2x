@@ -188,7 +188,7 @@ class MainWindow {open
                     }
 
                     if(ShadowRemovalEnabled()){
-                        CalcShadowRemovalAlpha(stvBuf.data(), nW, nH, 0X00FFFFFF, 0X00000008, 0X80000000);
+                        CalcShadowRemovalAlpha(stvBuf.data(), nW, nH, 0X80000000);
                     }
 
                     auto nDX = g_WilPackage.CurrentImageInfo().shPX;
@@ -274,7 +274,7 @@ class MainWindow {open
                     }
 
                     if(ShadowRemovalEnabled()){
-                        CalcShadowRemovalAlpha(stvBuf.data(), nW, nH, 0X00FFFFFF, 0X00000008, 0X80000000);
+                        CalcShadowRemovalAlpha(stvBuf.data(), nW, nH, 0X80000000);
                     }
 
                     auto nDX = g_WilPackage.CurrentImageInfo().shPX;
